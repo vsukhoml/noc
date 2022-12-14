@@ -1,0 +1,32 @@
+InheritParentConfig: false
+Checks:          'clang-diagnostic-*,clang-analyzer-*,clang-diagnostic-*,readability-identifier-naming,cert-*,bugprone-narrowing-*'
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+AnalyzeTemporaryDtors: false
+FormatStyle:     file
+CheckOptions:
+  - key:             readability-identifier-naming.ClassCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.StructCase
+    value:           aNy_CasE
+  - key:             readability-identifier-naming.MemberCase
+    value:           lower_case
+  - key:             readability-identifier-naming.MemberIgnoredRegexp
+    value:           "^_[A-Za-z0-9_]+$"
+  - key:             readability-identifier-naming.VariableCase
+    value:           lower_case
+  - key:             readability-identifier-naming.VariableIgnoredRegexp
+    value:           "^_[A-Za-z0-9_]+$"
+  - key:             readability-identifier-naming.FunctionCase
+    value:           lower_case
+  - key:             readability-identifier-naming.FunctionIgnoredRegexp
+    value:           "^_[A-Za-z0-9_]+$"
+  - key:             readability-identifier-naming.GlobalConstantCase
+    value:           UPPER_CASE
+  - key:             readability-identifier-naming.ConstexprVariableCase
+    value:           UPPER_CASE
+  - key:             readability-identifier-naming.GetConfigPerFile
+    value:           true
+  - key:             bugprone-easily-swappable-parameters.IgnoredParameterNames
+    value:           '"";iterator;Iterator;begin;Begin;end;End;first;First;last;Last;lhs;LHS;rhs;RHS;n_hi32;n_lo32;q;r;c;n'
+
