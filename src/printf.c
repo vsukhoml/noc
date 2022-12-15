@@ -49,8 +49,8 @@ static uint32_t get_digit(uint64_t *n, uint32_t d) {
     return r;
 }
 
-static char char_digit(unsigned char c, char a) {
-    return c > 9 ? (c + a - 10) : (c + '0');
+static inline char char_digit(unsigned char c, char a) {
+    return (char)(c > 9 ? (c + a - 10) : (c + '0'));
 }
 
 typedef bool (*write_char)(void *state, int c);
@@ -360,12 +360,12 @@ static bool write_printf(void *state, int c) {
     struct printf_state *ctx = (struct printf_state *)state;
 
     if (ctx->len < sizeof(ctx->buf)) {
-        ctx->buf[ctx->len++] = c;
+        ctx->buf[ctx->len++] = (char)c;
     } else {
         // If buffer is full, print it
         if (putnstr(ctx->buf, sizeof(ctx->buf)) < 0) return false;
         ctx->len = 1;
-        ctx->buf[0] = c;
+        ctx->buf[0] = (char)c;
     }
     return true;
 }
@@ -380,7 +380,7 @@ int printf(const char *format, ...) {
     res = formatter(write_printf, &ctx, format, args);
     va_end(args);
     if (res > 0) {
-        if (ctx.len) res = putnstr(ctx.buf, ctx.len);
+        if (ctx.len) res = (int)putnstr(ctx.buf, ctx.len);
     } else
         putnstr(ERROR_STR, sizeof(ERROR_STR));
 
@@ -399,7 +399,8 @@ struct snprintf_state {
 // Write to null-terminated string
 static bool write_str(void *state, int c) {
     struct snprintf_state *ctx = (struct snprintf_state *)state;
-    return (ctx->str < ctx->str_end) ? (*(ctx->str++) = c, true) : false;
+    return (ctx->str < ctx->str_end) ? ((void)(*(ctx->str++) = (char)c), true)
+                                     : false;
 }
 
 int snprintf(char *restrict str, size_t n, const char *restrict format, ...) {
