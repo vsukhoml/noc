@@ -17,6 +17,9 @@
 extern "C" {
 #endif
 
+// The value returned by puts() and similar functions to indicate error
+#define EOF (-1)
+
 /// @brief Formatted print on standard output.
 ///
 /// The printf function writes output to standard output, under control of the
@@ -95,6 +98,11 @@ int snprintf(char *restrict s, size_t n, const char *restrict format, ...)
 /// than n.
 int vsnprintf(char *restrict s, size_t n, const char *restrict format,
               va_list arg);
+
+/// @brief Writes the string s and a trailing newline to standard output
+/// @param s string to print
+/// @return a nonnegative number on success, or EOF on error.
+int puts(const char *str);
 
 #ifdef __cplusplus
 }

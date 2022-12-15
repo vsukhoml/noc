@@ -36,7 +36,7 @@ extern "C" {
         (_a < _b) ? _a : _b;    \
     })
 
-#ifdef DEBUG
+#ifdef NDEBUG
 #define LOG(s, ...) printf(s, __VA_ARGS__)
 #else
 #define LOG(s, ...)
