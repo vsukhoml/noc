@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
@@ -76,7 +77,7 @@ static int formatter(write_char write, void *state, const char *format,
     int count = 0;  // Counter for output characters
     char c;
 
-    if (!format) return -1;
+    if (!format) return EOF;
 
     while ((c = *format++)) {
         if (c != '%') {
@@ -384,6 +385,17 @@ int printf(const char *format, ...) {
     } else
         putnstr(ERROR_STR, sizeof(ERROR_STR));
 
+    return res;
+}
+
+static const char NEWLINE[] = "\n";
+
+int puts(const char *str) {
+    if (!str)
+        return EOF;
+    size_t len = strlen(str);
+    int res = (int)putnstr(str, len);
+    if (res >= 0) res = (int)putnstr(NEWLINE, 1);
     return res;
 }
 
