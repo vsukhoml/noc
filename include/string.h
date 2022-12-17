@@ -32,6 +32,7 @@
 #ifndef NOC_STRING_H
 #define NOC_STRING_H
 
+#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -39,7 +40,6 @@
 extern "C" {
 #endif
 
-typedef int errno_t;
 typedef size_t rsize_t;
 
 #ifndef RSIZE_MAX
@@ -171,7 +171,9 @@ size_t strxfrm(char *restrict s1, const char *restrict s2, size_t n);
 /// @param n length of buffer
 /// @return pointer to the located character, or a null pointer if the character
 /// does not occur in the object.
-void *memchr(const void *buffer, int c, size_t n);
+const void *memchr(const void *buffer, int c, size_t n);
+
+const void *memrchr(const void *buffer, int c, size_t n);
 
 /// @brief Find first occurence of character in null-terminated string.
 ///
@@ -224,6 +226,18 @@ char *strstr(const char *s1, const char *s2);
 /// @param len length to fill
 /// @return value of `dest`
 void *memset(void *dest, int c, size_t len);
+
+/// @brief Set memory to value. The purpose of this function is to make
+/// sensitive information stored in the object inaccessible
+///
+/// The memset_explicit function copies the value of `c` (converted to an
+/// unsigned char) into each of the first `len` characters of the object pointed
+/// to by `dest`
+/// @param dest destination buffer
+/// @param c character to fill in
+/// @param len length to fill
+/// @return value of `dest`
+void *memset_explicit(void *dest, int c, size_t len);
 
 /// @brief Compute length of the string with limit.
 ///

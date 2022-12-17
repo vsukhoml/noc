@@ -74,7 +74,7 @@ SECTIONS
     *(.eh_frame .eh_frame.*)
 		*(.ARM.extab* .gnu.linkonce.armextab.*)
     . = ALIGN(16);
-    		__text_end = .;
+        __text_end = .;
   } > ROM AT>ROM :text
   PROVIDE (_etext = .);
 
@@ -87,6 +87,10 @@ SECTIONS
     *(.data .data.* .gnu.linkonce.d.* .data1)
     *(.sdata .sdata.* .sdata2.*)
     *(.ldata .ldata.* .gnu.linkonce.l.*)
+    /* TODO: Provide threads support? */
+    PROVIDE(__tdata_start = .);
+    *(.tdata .tdata.*)
+    PROVIDE(__tdata_end = .);
      /* Place zero word at the end */
     LONG(0)
     . = ALIGN(16);
@@ -102,6 +106,10 @@ SECTIONS
     *(.bss .bss.* .gnu.linkonce.b.*)
     *(.dynlbss)
     *(.lbss .lbss.* .gnu.linkonce.lb.*)
+    /* TODO: Provide threads support? */
+    PROVIDE(__tbss_start = .);
+    *(.tbss .tbss.*)
+    PROVIDE(__tbss_end = .);
     *(COMMON)
     *(LARGE_COMMON)
    . = ALIGN(8);

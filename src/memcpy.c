@@ -53,9 +53,7 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t len) {
 
 // TODO: reconsider where check function should go
 // https://refspecs.linuxbase.org/LSB_5.0.0/LSB-Core-generic/LSB-Core-generic/libc-ddefs.html
-void __chk_fail(void) {
-    __builtin_trap();
-}
+__attribute__((weak)) void __chk_fail(void) { __builtin_trap(); }
 
 void *__memcpy_chk(void *dest, const void *src, size_t len, size_t destlen) {
     if (__builtin_expect(destlen < len, 0)) __chk_fail();
@@ -91,6 +89,9 @@ void *memset(void *dest, int c, size_t len) {
     while (d < tail) *(d++) = c;
     return dest;
 }
+
+void *memset_explicit(void *dest, int c, size_t len)
+    __attribute__((alias("memset")));
 
 void *__memset_chk(void *dest, int c, size_t len, size_t destlen) {
     if (__builtin_expect(destlen < len, 0)) __chk_fail();
@@ -135,8 +136,7 @@ void *memmove(void *dest, const void *src, size_t len) {
     return dest;
 }
 
-void * __memmove_chk(void * dest, const void * src, size_t len, size_t destlen)
-{
+void *__memmove_chk(void *dest, const void *src, size_t len, size_t destlen) {
     if (__builtin_expect(destlen < len, 0)) __chk_fail();
     return memmove(dest, src, len);
 }
