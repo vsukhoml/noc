@@ -131,9 +131,24 @@ int abs(int j);
 long int labs(long int j);
 long long int llabs(long long int j);
 
-// div_t div(int numer, int denom);
-// ldiv_t ldiv(long int numer, long int denom);
-// lldiv_t lldiv(long long int numer, long long int denom);
+typedef struct {
+    int quot;
+    int rem;
+} div_t;
+
+typedef struct {
+    long int quot;
+    long int rem;
+} ldiv_t;
+
+typedef struct {
+    long long int quot;
+    long long int rem;
+} lldiv_t;
+
+div_t div(int numer, int denom);
+ldiv_t ldiv(long int numer, long int denom);
+lldiv_t lldiv(long long int numer, long long int denom);
 
 /// @}
 
@@ -145,6 +160,13 @@ int mblen(const char *s, size_t n);
 int mbtowc(wchar_t *restrict pwc, const char *restrict s, size_t n);
 
 /// @}
+
+void abort(void) __attribute__((noreturn));
+
+void *bsearch(const void *key, void *base, size_t nmemb, size_t size,
+              int (*compar)(const void *, const void *));
+void qsort(void *base, size_t nmemb, size_t size,
+           int (*compar)(const void *, const void *));
 
 #ifdef __cplusplus
 }

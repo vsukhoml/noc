@@ -49,7 +49,7 @@ AR:=/usr/bin/ar
 endif
 
 OBJDUMP?=/usr/bin/objdump
-OBJDUMP_FLAGS?=-dCSr
+OBJDUMP_FLAGS?=-dCSrt
 
 CFLAGS_CLANG?=-Oz -march=native
 CFLAGS_GCC?=-Os -march=native

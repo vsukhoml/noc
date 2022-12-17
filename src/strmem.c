@@ -38,16 +38,6 @@ size_t strlen(const char *s) {
 }
 #endif
 
-size_t strnlen(const char *s, size_t maxlen) {
-    if (s == NULL) return 0;
-    // adjust maxlen to avoid address wrapping
-    maxlen = MIN(maxlen, PLATFORM_MAX_ADDR - (uintptr_t)s);
-    const char *end = s + maxlen;
-    const char *scan = s;
-    while (scan < end && *scan) scan++;
-    return (size_t)(scan - s);
-}
-
 char *strzcpy(char *dest, const char *src, size_t len) {
     char *d = dest;
     if (!len) return dest;
@@ -59,14 +49,31 @@ char *strzcpy(char *dest, const char *src, size_t len) {
     return dest;
 }
 
-void *memchr(const void *buffer, int c, size_t n) {
-    char *current = (char *)buffer;
+const void *memchr(const void *buffer, int c, size_t n) {
+    const char *current = (char *)buffer;
     // Adjust n to avoid address wrapping
     n = MIN(n, PLATFORM_MAX_ADDR - (uintptr_t)buffer);
-    char *end = current + n;
+    const char *end = current + n;
     while (current < end) {
         if (*current == c) return current;
         current++;
+    }
+    return NULL;
+}
+
+size_t strnlen(const char *str, size_t maxlen) {
+    const char *p = memchr(str, 0, maxlen);
+    return (p) ? (size_t)(p - str) : maxlen;
+}
+
+const void *memrchr(const void *buffer, int c, size_t n) {
+    const char *start = (char *)buffer;
+    // Adjust n to avoid address wrapping
+    n = MIN(n, PLATFORM_MAX_ADDR - (uintptr_t)buffer);
+    const char *current = start + n;
+    while (current > start) {
+        current--;
+        if (*current == c) return current;
     }
     return NULL;
 }

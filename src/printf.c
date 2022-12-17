@@ -8,8 +8,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -391,8 +391,7 @@ int printf(const char *format, ...) {
 static const char NEWLINE[] = "\n";
 
 int puts(const char *str) {
-    if (!str)
-        return EOF;
+    if (!str) return EOF;
     size_t len = strlen(str);
     int res = (int)putnstr(str, len);
     if (res >= 0) res = (int)putnstr(NEWLINE, 1);

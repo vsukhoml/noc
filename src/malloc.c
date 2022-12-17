@@ -4,6 +4,7 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -109,7 +110,10 @@ static void *aligned_sbrk(size_t size, struct malloc_state *state) {
 
     char *p = sbrk((intptr_t)size);
 
-    if (p == SBRK_FAILURE) return p;
+    if (p == SBRK_FAILURE) {
+        errno = ENOMEM;
+        return p;
+    }
 
     state->sbrk_end = p + size;
 
