@@ -81,14 +81,14 @@ static int formatter(write_char write, void *state, const char *format,
 
     while ((c = *format++)) {
         if (c != '%') {
-            if (!write(state, c)) goto stop;
+            if (!write(state, c)) return EOF;
             count++;
             continue;
         }
 
         c = *format++;  // Read format specifier
         if (c == '%') {
-            if (!write(state, c)) goto stop;
+            if (!write(state, c)) return EOF;
             count++;
             continue;
         } else if (c == 0) {  // Incomplete format flag
@@ -172,9 +172,10 @@ static int formatter(write_char write, void *state, const char *format,
             }
 
             while (precision) {
-                if (!write(state, char_digit(*value_str >> 4, 'a'))) goto stop;
+                if (!write(state, char_digit(*value_str >> 4, 'a'))) return EOF;
                 count++;
-                if (!write(state, char_digit(*value_str & 0xf, 'a'))) goto stop;
+                if (!write(state, char_digit(*value_str & 0xf, 'a')))
+                    return EOF;
                 count++;
                 precision--;
                 value_str++;
@@ -215,7 +216,7 @@ static int formatter(write_char write, void *state, const char *format,
 
             if (c == 'c') {  // '%c', read char
                 c = va_arg(args, int);
-                if (!write(state, c)) goto stop;
+                if (!write(state, c)) return EOF;
                 count++;
                 continue;
             }
@@ -267,10 +268,9 @@ static int formatter(write_char write, void *state, const char *format,
                 case 'p':
                     // Pointers printed with 0x prefix
                     base = 16;
-                    if (!write(state, '0')) goto stop;
+                    if (!write(state, '0')) return EOF;
                     count++;
-
-                    if (!write(state, 'x')) goto stop;
+                    if (!write(state, 'x')) return EOF;
                     count++;
                     break;
                 case 'X':
@@ -279,14 +279,16 @@ static int formatter(write_char write, void *state, const char *format,
                     break;
                 case 'o':  // Octal numbers starts with 0
                     base = 8;
-                    if (!write(state, '0')) goto stop;
+                    if (!write(state, '0')) return EOF;
                     count++;
                     break;
                 case 'b':
                     base = 2;
                     break;
                 default:
+                    // Unsupported format specifier
                     format = ERROR_STR;
+                    return EOF;
             }
 
             // Leave space for the terminating null.
@@ -318,37 +320,37 @@ static int formatter(write_char write, void *state, const char *format,
         // length
         size_t value_len = strlen(value_str);
 
-        // No padding strings to wider than the precision
-        if (precision && pad_width > precision) pad_width = precision;
+        // Adjust value len to requested precision
+        if (precision && value_len > precision) value_len = precision;
 
         // If precision is zero, print everything
         if (!precision)
             precision = (value_len > pad_width) ? value_len : pad_width;
 
         // Padding right if requested
-        if (!(flags.left)) {
+        if (flags.left == 0) {
             const char pad_char = flags.pad_zero ? '0' : ' ';
             while (value_len < pad_width) {
-                if (!write(state, pad_char)) goto stop;
+                if (!write(state, pad_char)) return EOF;
                 count++;
                 value_len++;
             }
         }
+
         while (*value_str && precision) {
-            if (!write(state, *value_str++)) goto stop;
+            if (!write(state, *value_str++)) return EOF;
             count++;
             precision--;
         }
+
         // Padding left if requested
         if (flags.left)
             while (value_len < pad_width) {
-                if (!write(state, ' ')) goto stop;
+                if (!write(state, ' ')) return EOF;
                 count++;
                 value_len++;
             }
     }
-stop:
-
     return count;
 }
 
@@ -403,37 +405,42 @@ int __printf_chk(const char *format, ...)
     __attribute__((weak, alias("printf")));
 
 struct snprintf_state {
-    char *str_end;
+    char *str_end;  // last character to be '\0'
     char *str;
 };
 
 // Write to null-terminated string
 static bool write_str(void *state, int c) {
     struct snprintf_state *ctx = (struct snprintf_state *)state;
-    return (ctx->str < ctx->str_end) ? ((void)(*(ctx->str++) = (char)c), true)
-                                     : false;
+    // Write only if there is enough space
+    if (ctx->str < ctx->str_end) *(ctx->str++) = (char)c;
+    return true;
 }
 
+// The functions snprintf() and vsnprintf() do not write more than size bytes
+// (including the terminating null byte ('\0')). If the output was truncated
+// due to this limit, then the return value is the number of characters
+// (excluding  the  terminating  null byte) which would have been written to the
+// final string if enough space had been available. Thus, a return value of size
+// or more means that the output was truncated.
 int snprintf(char *restrict str, size_t n, const char *restrict format, ...) {
-    struct snprintf_state ctx = {.str_end = str + n, .str = str};
+    if (n == 0) return -1;
+    struct snprintf_state ctx = {.str_end = str + n - 1, .str = str};
     va_list args;
     va_start(args, format);
     int res = formatter(write_str, &ctx, format, args);
     va_end(args);
-    if (ctx.str >= ctx.str_end)
-        *(ctx.str_end - 1) = 0;
-    else
-        *ctx.str = 0;
+    *ctx.str_end = 0;
+    *ctx.str = 0;
     return res;
 }
 
 int vsnprintf(char *restrict str, size_t n, const char *restrict format,
               va_list args) {
-    struct snprintf_state ctx = {.str_end = str + n, .str = str};
+    if (n == 0) return -1;
+    struct snprintf_state ctx = {.str_end = str + n - 1, .str = str};
     int res = formatter(write_str, &ctx, format, args);
-    if (ctx.str >= ctx.str_end)
-        *(ctx.str_end - 1) = 0;
-    else
-        *ctx.str = 0;
+    *ctx.str_end = 0;
+    *ctx.str = 0;
     return res;
 }
