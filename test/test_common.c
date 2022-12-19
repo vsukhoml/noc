@@ -30,8 +30,11 @@ static bool test_string(uint32_t lineno, const char* cond, const char* got,
 
     // We failed if we stopped before len unless both strings terminated
     if ((i < len && (expect[i] || got[i])) != flags.invert) {
-        printf("FAIL(%u): strcmp %s, at offset %zu, '%c' %s '%c'\n", lineno,
-               cond, i, got[i], flags.invert ? "!=" : "==", expect[i]);
+        const char* eq = flags.invert ? "!=" : "==";
+        printf(
+            "FAIL(%u): strcmp %s, at offset %zu, '%c' %s '%c' (\'%s\' %s "
+            "\'%s\') \n",
+            lineno, cond, i, got[i], eq, expect[i], got, eq, expect);
         return false;
     }
 

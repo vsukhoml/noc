@@ -252,6 +252,9 @@ TEST_OBJECTS:=$(patsubst %.c,$(ODIR)/%.o,$(TEST_SOURCES))
 PLATFORM_OBJECTS:=$(abspath $(patsubst %.c,$(ODIR)/%.o,$(PLATFORM_SOURCES)))
 $(PLATFORM_OBJECTS): CFLAGS+=$(PLATFORM_FLAGS)
 
+# Allow bad formats for testing
+$(ODIR)/test/test_snprintf.o: CFLAGS+=-Wno-error=format -Wno-error=format-extra-args
+
 # Return current date or use provided
 TIMESTAMP?="$(shell date +%s)"
 
