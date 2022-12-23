@@ -291,8 +291,8 @@ $(ODIR)/test/test: lib $(TEST_OBJECTS) $(LD_SCRIPT)
 	$(Q)$(CC) $(CFLAGS) $(CFLAGS_LD) -Wl,-Map=$@.map  -Wl,-T $(LD_SCRIPT) \
 	      $(TEST_OBJECTS) -o $@ $(NOC_LD_NAME)
 	$(Q)$(OBJDUMP) $(OBJDUMP_FLAGS) $@ > $@.lst
-	$(Q)strip --strip-all $@
-	$(Q)ls -al $@
+	$(Q)strip --strip-unneeded $@ -o $@.clean
+	$(Q)ls -al $@ $@.clean
 
 clean:
 	rm -rf ./build

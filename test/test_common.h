@@ -131,24 +131,29 @@ bool is_test_succeed(void);
                     expect, tolerance,                                     \
                     (struct test_flags){.near = 1, .sign = 1});
 
+// Type checking cast pointer to uintptr_t
+static inline uintptr_t noc_ptr_to_uint(const void* ptr) {
+    return (uintptr_t)ptr;
+}
+
 // Check if two pointers are equal
-#define TEST_PTR_EQ(got, expect)                                     \
-    add_test_result(__LINE__, #got " == " #expect, (uintptr_t)(got), \
-                    (uintptr_t)(expect), 0, (struct test_flags){.ptr = 1})
+#define TEST_PTR_EQ(got, expect)                                         \
+    add_test_result(__LINE__, #got " == " #expect, noc_ptr_to_uint(got), \
+                    noc_ptr_to_uint(expect), 0, (struct test_flags){.ptr = 1})
 
 // Check if two pointers are unequal
-#define TEST_PTR_NEQ(got, expect)                                    \
-    add_test_result(__LINE__, #got " != " #expect, (uintptr_t)(got), \
-                    (uintptr_t)(expect), 0,                          \
+#define TEST_PTR_NEQ(got, expect)                                        \
+    add_test_result(__LINE__, #got " != " #expect, noc_ptr_to_uint(got), \
+                    noc_ptr_to_uint(expect), 0,                          \
                     (struct test_flags){.ptr = 1, .invert = 1})
 
 // Check if a pointer is NULL
-#define TEST_PTR_NULL(got)                                       \
-    add_test_result(__LINE__, #got " == NULL", (uintptr_t)(got), \
+#define TEST_PTR_NULL(got)                                           \
+    add_test_result(__LINE__, #got " == NULL", noc_ptr_to_uint(got), \
                     (uintptr_t)NULL, 0, (struct test_flags){.ptr = 1})
-#define TEST_PTR_NONNULL(got)                                    \
-    add_test_result(__LINE__, #got " != NULL", (uintptr_t)(got), \
-                    (uintptr_t)NULL, 0,                          \
+#define TEST_PTR_NONNULL(got)                                        \
+    add_test_result(__LINE__, #got " != NULL", noc_ptr_to_uint(got), \
+                    (uintptr_t)NULL, 0,                              \
                     (struct test_flags){.ptr = 1, .invert = 1})
 
 // Check something is zero
@@ -166,26 +171,27 @@ bool is_test_succeed(void);
                     (struct test_flags){.is_true = 1, .invert = 1})
 
 // Check if two strings are equal, like strcmp().
-#define TEST_STR_EQ(got, expect)                                     \
-    add_test_result(__LINE__, #got " == " #expect, (uintptr_t)(got), \
-                    (uintptr_t)(expect), -1, (struct test_flags){.str = 1})
+#define TEST_STR_EQ(got, expect)                                         \
+    add_test_result(__LINE__, #got " == " #expect, noc_ptr_to_uint(got), \
+                    noc_ptr_to_uint(expect), -1,                         \
+                    (struct test_flags){.str = 1})
 
 // Check if two strings are equal in the first len chars, like strncmp().
-#define TEST_STRN_EQ(got, expect, len)                               \
-    add_test_result(__LINE__, #got " == " #expect, (uintptr_t)(got), \
-                    (uintptr_t)(expect), len, (struct test_flags){.str = 1})
+#define TEST_STRN_EQ(got, expect, len)                                   \
+    add_test_result(__LINE__, #got " == " #expect, noc_ptr_to_uint(got), \
+                    noc_ptr_to_uint(expect), len,                        \
+                    (struct test_flags){.str = 1})
 
 // Check if two memory buffers are equal, like memcmp().
-#define TEST_MEMCMP(got, expect, len)                                \
-    add_test_result(__LINE__, #got " == " #expect, (uintptr_t)(got), \
-                    (uintptr_t)(expect), len,                        \
+#define TEST_MEMCMP(got, expect, len)                                     \
+    add_test_result(__LINE__, #got " == " #expect, noc_ptr_to_uint(got),  \
+                    noc_ptr_to_uint(expect), len,                         \
                     (struct test_flags){.memcmp = 1})
 
 // Check if memory buffer is set to value, like memchk().
-#define TEST_MEMCHK(got, expect, len)                                \
-    add_test_result(__LINE__, #got " == " #expect, (uintptr_t)(got), \
-                    (uintptr_t)(expect), len,                        \
-                    (struct test_flags){.memchk = 1})
+#define TEST_MEMCHK(got, expect, len)                                    \
+    add_test_result(__LINE__, #got " == " #expect, noc_ptr_to_uint(got), \
+                    (uint8_t)(expect), len, (struct test_flags){.memchk = 1})
 
 struct test_case {
     // Test case name. Case-insensitive.
