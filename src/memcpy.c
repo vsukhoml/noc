@@ -12,8 +12,10 @@
 
 #if defined(ARCH_X86_64)
 void *memcpy(void *restrict dest, const void *restrict src, size_t len) {
-    __asm__("rep movsb\n" : : "D"(dest), "S"(src), "c"(len) :);
-    return dest;
+    void *dest_copy = dest;
+    // Workaround for Clang 14/15 which thinks rdi/rsi/rcx aren't changed
+    __asm__ volatile ("rep movsb\n" : "+D"(dest), "+S"(src), "+c"(len) : : "memory");
+    return dest_copy;
 }
 #else
 

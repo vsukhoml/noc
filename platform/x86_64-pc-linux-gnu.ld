@@ -21,6 +21,7 @@ PHDRS
 	text PT_LOAD;
   /* data PT_LOAD; */
 	bss PT_LOAD;
+  tls PT_TLS;
 }
 
 SECTIONS
@@ -87,10 +88,6 @@ SECTIONS
     *(.data .data.* .gnu.linkonce.d.* .data1)
     *(.sdata .sdata.* .sdata2.*)
     *(.ldata .ldata.* .gnu.linkonce.l.*)
-    /* TODO: Provide threads support? */
-    PROVIDE(__tdata_start = .);
-    *(.tdata .tdata.*)
-    PROVIDE(__tdata_end = .);
      /* Place zero word at the end */
     LONG(0)
     . = ALIGN(16);
@@ -99,22 +96,34 @@ SECTIONS
   PROVIDE(_data_start = ADDR(.data));
   PROVIDE(_data_source = LOADADDR(.data));
 
-  .bss (NOLOAD) :
-  {
+  .tdata : {
+    /* TODO: Provide threads support? */
+    PROVIDE(__tdata_start = .);
+    *(.tdata .tdata.*)
+    PROVIDE(__tdata_end = .);
+   . = ALIGN(8);
+  } > RAM AT>RAM :tls
+
+  .tbss (NOLOAD) : {
+    /* TODO: Provide threads support? */
+    PROVIDE(__tbss_start = .);
+    *(.tbss .tbss.*)
+    PROVIDE(__tbss_end = .);
+   . = ALIGN(8);
+  } > RAM AT>RAM :tls
+
+  .bss (NOLOAD) : {
     _bss_start = .;
     *(.dynbss)
     *(.bss .bss.* .gnu.linkonce.b.*)
     *(.dynlbss)
     *(.lbss .lbss.* .gnu.linkonce.lb.*)
-    /* TODO: Provide threads support? */
-    PROVIDE(__tbss_start = .);
-    *(.tbss .tbss.*)
-    PROVIDE(__tbss_end = .);
     *(COMMON)
     *(LARGE_COMMON)
    . = ALIGN(8);
     _bss_end = .;
   } > RAM AT>RAM :bss
+
   PROVIDE( _bss_size = _bss_end - _bss_start );
   PROVIDE (_brk_start = .);
   PROVIDE (_brk_end = LENGTH(RAM) + ORIGIN(RAM));
