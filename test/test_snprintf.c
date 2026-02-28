@@ -65,7 +65,11 @@ static bool test_snprintf(void) {
     TEST_SNPRINTF("1234567890", "%d", 1234567890);
 
     // Unsupported format
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+#pragma GCC diagnostic ignored "-Wformat-extra-args"
     TEST_INT_EQ(snprintf(s, sizeof(s), "%z", 1234567890), -1);
+#pragma GCC diagnostic pop
 
     TEST_SNPRINTF("1234567890 499602d2 011145401322 A Hello", "%d %x %o %c %s",
                   1234567890, 1234567890, 1234567890, 'A', "Hello");
