@@ -159,6 +159,14 @@ size_t strxfrm(char *restrict s1, const char *restrict s2, size_t n);
 /// @defgroup g3 Search functions.
 /// @{
 
+/// The rawmemchr() function is similar to memchr(): it assumes (i.e., the
+/// programmer knows for certain) that an instance of c lies somewhere in the
+/// memory area starting at the location pointed to by s, and so performs an
+/// optimized search for c (i.e., no use of a count argument to limit the range
+/// of the search). If an instance of c is not found, the results are
+/// unpredictable.
+void *rawmemchr(const void *s, int c);
+
 /// @brief Find first occurence of character.
 ///
 /// The memchr function locates the first occurrence of `c` (converted to an
@@ -173,6 +181,16 @@ size_t strxfrm(char *restrict s1, const char *restrict s2, size_t n);
 /// does not occur in the object.
 const void *memchr(const void *buffer, int c, size_t n);
 
+/// @brief Find last occurence of character (reverse search).
+///
+/// The memchr function locates the last occurrence of `c` (converted to an
+/// unsigned char) in the initial `n` characters (each interpreted as unsigned
+/// char) of the object pointed to by `buffer`.
+/// @param buffer source buffer
+/// @param c character to search
+/// @param n length of buffer
+/// @return pointer to the located character, or a null pointer if the character
+/// does not occur in the object.
 const void *memrchr(const void *buffer, int c, size_t n);
 
 /// @brief Find first occurence of character in null-terminated string.
@@ -184,32 +202,56 @@ const void *memrchr(const void *buffer, int c, size_t n);
 /// @param c character to search
 /// @return returns a pointer to the located character, or a null pointer if the
 /// character does not occur in the string.
-char *strchr(const char *s, int c);
+const char *strchr(const char *s, int c);
 
-///@brief Search for first character from the list.
+/// @brief Search for first character from the list.
 /// The strcspn function computes the length of the maximum initial segment of
 /// the string pointed to by `s` which consists entirely of characters not from
 /// the string pointed to by `characters`.
-///@param s pointer to the null-terminated byte string to be analyzed
-///@param characters pointer to the null-terminated byte string that contains
+/// @param s pointer to the null-terminated byte string to be analyzed
+/// @param characters pointer to the null-terminated byte string that contains
 /// the characters to search for
 ///@return length of the maximum initial segment
 size_t strcspn(const char *s, const char *characters);
 
-///@brief Search for first character not from the list.
+/// @brief Search for first character not from the list.
 /// The strspn function computes the length of the maximum initial segment of
 /// the string pointed to by `s` which consists entirely of characters from
 /// the string pointed to by `characters`.
-///@param s pointer to the null-terminated byte string to be analyzed
-///@param characters pointer to the null-terminated byte string that contains
+/// @param s pointer to the null-terminated byte string to be analyzed
+/// @param characters pointer to the null-terminated byte string that contains
 /// the characters to search for.
 ///@return length of the maximum initial segment
 size_t strspn(const char *s, const char *characters);
 
-char *strpbrk(const char *s1, const char *s2);
+/// @brief Locates the first occurrence of character in the string
+/// The strpbrk function locates the first occurrence in the string
+/// pointed to by s of any character from the string pointed to by characters.
+/// @param s pointer to the null-terminated byte string to be analyzed
+/// @param characters pointer to the null-terminated byte string that contains
+/// the characters to search for.
+/// @return a pointer to the character, or a null pointer if no character from characters
+/// occurs in s
+char *strpbrk(const char *s, const char *characters);
 
+/// @brief Locates the last occurrence of character in the string
+/// The strrchr generic function locates the last occurrence of c (converted to
+/// a char) in the string pointed to by s. The terminating null character is
+/// considered to be part of the string.
+/// @param s pointer to the null-terminated byte string to be analyzed
+/// @param c character to search
+/// @return a pointer to the character, or a null pointer if c does not occur in the string.
 char *strrchr(const char *s, int c);
 
+/// @brief Locates the first occurrence of the null-terminated string s2 in the
+/// null-terminated string s1. The strstr generic function locates the first
+/// occurrence in the string pointed to by s1 of the sequence of characters
+/// (excluding the terminating null character) in the string pointed to by s2.
+/// @param s1 pointer to the null-terminated byte string to be analyzed
+/// @param s2 pointer to the null-terminated byte string to search for
+/// @return The strstr generic function returns a pointer to the located string,
+/// or a null pointer if the string is not found. If s2 points to a string with
+/// zero length, the function returns s1.
 char *strstr(const char *s1, const char *s2);
 
 /// @}

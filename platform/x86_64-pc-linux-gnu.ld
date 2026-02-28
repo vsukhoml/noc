@@ -102,7 +102,7 @@ SECTIONS
     *(.tdata .tdata.*)
     PROVIDE(__tdata_end = .);
    . = ALIGN(8);
-  } > RAM AT>RAM :tls
+  } > RAM AT>ROM :tls
 
   .tbss (NOLOAD) : {
     /* TODO: Provide threads support? */
@@ -110,7 +110,7 @@ SECTIONS
     *(.tbss .tbss.*)
     PROVIDE(__tbss_end = .);
    . = ALIGN(8);
-  } > RAM AT>RAM :tls
+  } > RAM AT>ROM :tls
 
   .bss (NOLOAD) : {
     _bss_start = .;
