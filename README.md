@@ -30,8 +30,8 @@ Following variables are used:
 * `CFLAGS_CLANG_LD` defines compilation flags specific for `clang` for linking
 * `CFLAGS_GCC` defines compilation flags specific for `gcc`
 * `CFLAGS_GCC_LD` defines compilation flags specific for `gcc` for linking
-* `AR` name of `ar` to use (e.g. /usr/bin/llvm-ar-15)
-* `OBJDUMP` name of `objdump` to use (e.g. /usr/bin/llvm-objdump-15)
+* `AR` name of `ar` to use (e.g. /usr/bin/llvm-ar-20)
+* `OBJDUMP` name of `objdump` to use (e.g. /usr/bin/llvm-objdump-20)
 * `OBJDUMP_FLAGS` specific flags to `OBJDUMP`
 * `PLATFORM_SOURCES` list of platform specific sources to build for tests
 * `LD_SCRIPT` specifies platform specific linker script for tests

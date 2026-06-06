@@ -41,7 +41,7 @@ ARCH=x86_64
 # CC, AR are predefined, so need special handling
 ifeq ($(origin CC),default)
 CC:=/usr/bin/gcc
-#CC:=/usr/bin/clang-15
+#CC:=/usr/bin/clang-20
 endif
 
 ifeq ($(origin AR),default)
@@ -58,10 +58,14 @@ CFLAGS+=-g
 CFLAGS+=-fno-pic
 CFLAGS+=-fno-omit-frame-pointer
 CFLAGS+=-static
+# No CET (endbr64) on the target: drops ~4 bytes per function (size.md).
+CFLAGS+=-fcf-protection=none
 
 CFLAGS_CLANG+=--target=$(TARGET)
-CFLAGS_CLANG+=-fvectorize -freroll-loops
+CFLAGS_CLANG+=-fvectorize
 CFLAGS_GCC+=-fgcse-lm -fgcse-sm -fgcse-las -fgcse-after-reload -fweb -fstdarg-opt
+# Suppress the assembler-emitted .note.gnu.property section (gas only).
+CFLAGS_GCC+=-Wa,-mx86-used-note=no
 
 CFLAGS+=-DUSE_PLATFORM_64BIT_DIV=1
 
@@ -72,6 +76,8 @@ CFLAGS_LD+=-fno-pic -fno-plt -fno-pie
 CFLAGS_LD+=-static -nostdlib -L$(ODIR) -l$(NOC_NAME)
 CFLAGS_LD+=-Wl,--gc-sections
 CFLAGS_LD+=-Wl,--orphan-handling=warn
+# Drop the .note.gnu.build-id segment (minimal_elf.md).
+CFLAGS_LD+=-Wl,--build-id=none
 endif
 
 
@@ -81,12 +87,12 @@ endif
 ifeq ("$(TARGET)","riscv32-unknown-unknown-elf")
 ARCH:=riscv32
 ifeq ($(origin CC),default)
-CC:=/usr/bin/clang-15
+CC:=/usr/bin/clang-20
 endif
 ifeq ($(origin AR),default)
-AR:=/usr/bin/llvm-ar-15
+AR:=/usr/bin/llvm-ar-20
 endif
-OBJDUMP:=/usr/bin/llvm-objdump-15
+OBJDUMP:=/usr/bin/llvm-objdump-20
 OBJDUMP_FLAGS:=-dCSr
 
 CFLAGS+=-g
@@ -95,7 +101,7 @@ CFLAGS+=-fno-omit-frame-pointer
 CFLAGS+=-static
 
 CFLAGS_CLANG:=--target=$(TARGET) -Oz -march=rv32imc
-CFLAGS_CLANG+=-fvectorize -freroll-loops
+CFLAGS_CLANG+=-fvectorize
 CFLAGS+=-DUSE_PLATFORM_64BIT_DIV=0
 endif
 
@@ -106,12 +112,12 @@ endif
 ifeq ("$(TARGET)","aarch64-unknown-unknown-elf")
 ARCH:=aarch64
 ifeq ($(origin CC),default)
-CC:=/usr/bin/clang-15
+CC:=/usr/bin/clang-20
 endif
 ifeq ($(origin AR),default)
-AR:=/usr/bin/llvm-ar-15
+AR:=/usr/bin/llvm-ar-20
 endif
-OBJDUMP?=/usr/bin/llvm-objdump-15
+OBJDUMP?=/usr/bin/llvm-objdump-20
 OBJDUMP_FLAGS:=-dCSr
 
 CFLAGS+=-g
@@ -146,6 +152,10 @@ CFLAGS+=-std=c11
 CFLAGS+=-ffunction-sections -fdata-sections
 CFLAGS+=-fmerge-all-constants
 CFLAGS+=-ffreestanding
+# Strip ELF metadata not needed on a freestanding target (size.md/minimal_elf.md):
+# no DWARF unwind tables (.eh_frame), no compiler ident (.comment).
+CFLAGS+=-fno-asynchronous-unwind-tables
+CFLAGS+=-fno-ident
 CFLAGS+=-fno-builtin-abs
 CFLAGS+=-fno-builtin-labs
 CFLAGS+=-fno-builtin-memcpy
@@ -291,7 +301,7 @@ $(ODIR)/test/test: lib $(TEST_OBJECTS) $(LD_SCRIPT)
 	$(Q)$(CC) $(CFLAGS) $(CFLAGS_LD) -Wl,-Map=$@.map  -Wl,-T $(LD_SCRIPT) \
 	      $(TEST_OBJECTS) -o $@ $(NOC_LD_NAME)
 	$(Q)$(OBJDUMP) $(OBJDUMP_FLAGS) $@ > $@.lst
-	$(Q)strip --strip-unneeded $@ -o $@.clean
+	$(Q)objcopy --strip-all --strip-section-headers $@ $@.clean
 	$(Q)ls -al $@ $@.clean
 
 clean:

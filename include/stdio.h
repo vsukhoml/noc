@@ -99,8 +99,8 @@ int snprintf(char *restrict s, size_t n, const char *restrict format, ...)
 int vsnprintf(char *restrict s, size_t n, const char *restrict format,
               va_list arg);
 
-/// @brief Writes the string s and a trailing newline to standard output
-/// @param s string to print
+/// @brief Writes the string str and a trailing newline to standard output
+/// @param str string to print
 /// @return a nonnegative number on success, or EOF on error.
 int puts(const char *str);
 
