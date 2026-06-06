@@ -58,13 +58,16 @@ CFLAGS+=-g
 CFLAGS+=-fno-pic
 CFLAGS+=-fno-omit-frame-pointer
 CFLAGS+=-static
-# No CET (endbr64) on the target: drops ~4 bytes per function (size.md).
+# GCC defaults to -fcf-protection=full on x86, which prepends a 4-byte endbr64
+# to every function for Intel CET. The target does not use CET, so disable it
+# and reclaim those bytes (was ~50 endbr64 in the test binary).
 CFLAGS+=-fcf-protection=none
 
 CFLAGS_CLANG+=--target=$(TARGET)
 CFLAGS_CLANG+=-fvectorize
 CFLAGS_GCC+=-fgcse-lm -fgcse-sm -fgcse-las -fgcse-after-reload -fweb -fstdarg-opt
-# Suppress the assembler-emitted .note.gnu.property section (gas only).
+# gas emits a .note.gnu.property note recording x86 ISA/feature use; nothing
+# here consumes it. Tell the assembler not to generate it (GNU as only).
 CFLAGS_GCC+=-Wa,-mx86-used-note=no
 
 CFLAGS+=-DUSE_PLATFORM_64BIT_DIV=1
@@ -76,8 +79,13 @@ CFLAGS_LD+=-fno-pic -fno-plt -fno-pie
 CFLAGS_LD+=-static -nostdlib -L$(ODIR) -l$(NOC_NAME)
 CFLAGS_LD+=-Wl,--gc-sections
 CFLAGS_LD+=-Wl,--orphan-handling=warn
-# Drop the .note.gnu.build-id segment (minimal_elf.md).
+# The linker otherwise emits a .note.gnu.build-id (a hash note in its own
+# segment) that nothing here reads; suppress it.
 CFLAGS_LD+=-Wl,--build-id=none
+# Note: do NOT add -Wl,--nmagic here. It removes inter-segment page padding,
+# which breaks the file-offset/VMA page congruence the kernel requires for the
+# file-backed RAM (.data) segment -> SIGSEGV at startup. See the .data comment
+# in the linker script for the full explanation.
 endif
 
 
@@ -152,8 +160,10 @@ CFLAGS+=-std=c11
 CFLAGS+=-ffunction-sections -fdata-sections
 CFLAGS+=-fmerge-all-constants
 CFLAGS+=-ffreestanding
-# Strip ELF metadata not needed on a freestanding target (size.md/minimal_elf.md):
-# no DWARF unwind tables (.eh_frame), no compiler ident (.comment).
+# Drop metadata sections the compiler emits by default but a freestanding,
+# no-exceptions target never uses. -fno-asynchronous-unwind-tables removes the
+# .eh_frame stack-unwinding tables; -fno-ident removes the .comment string
+# (compiler name/version). Both shrink every .o and the final image.
 CFLAGS+=-fno-asynchronous-unwind-tables
 CFLAGS+=-fno-ident
 CFLAGS+=-fno-builtin-abs
@@ -297,6 +307,10 @@ $(ODIR)/$(NOC_LIBNAME): $(OBJECTS) $(PLATFORM_OBJECTS) | $(ODIR)
 test: $(ODIR)/test/test
 	$(Q)$<
 
+# Links the test binary, then writes $@.clean: the loadable image with
+# --strip-all (symbols/debug info) and --strip-section-headers (the whole
+# section-header table). The kernel execs from program headers alone, so the
+# section headers are dead weight in the file; $@ keeps them for objdump/gdb.
 $(ODIR)/test/test: lib $(TEST_OBJECTS) $(LD_SCRIPT)
 	$(Q)$(CC) $(CFLAGS) $(CFLAGS_LD) -Wl,-Map=$@.map  -Wl,-T $(LD_SCRIPT) \
 	      $(TEST_OBJECTS) -o $@ $(NOC_LD_NAME)

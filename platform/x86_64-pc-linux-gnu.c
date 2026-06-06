@@ -136,12 +136,15 @@ extern char _bss_end[];
 int main(int argc, char **argv, char **envp);
 
 static void __attribute__((used)) __start(int argc, char **argv, char **envp) {
-    // Due to unexpected (undocumented?) behavior of ld/lld/loader,
-    // this copy not needed. Seems dependent on PHDRS for .data, needs
-    // more investigation. But this is beneficial for this example.
+    // No LMA->VMA copy of .data is needed here. The linker script gives .data a
+    // VMA in RAM and an LMA in ROM, and assigns it to the RAM ("bss") PT_LOAD,
+    // so the kernel maps that segment file-backed and reads the initializer
+    // bytes straight from the ROM image into the RAM VMA before _start runs.
+    // On a target with no such loader (e.g. running an objcopy'd raw binary),
+    // this copy would be required instead:
     // memcpy(_data_start, _data_source, (uintptr_t)(_data_end - _data_start));
 
-    // Initialize .bss to zero.
+    // .bss is NOLOAD (no file bytes), so zero it ourselves.
     memset(_bss_start, 0, (uintptr_t)(_bss_end - _bss_start));
 
     // For benchmarks make sure we only run on same core

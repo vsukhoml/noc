@@ -5,7 +5,23 @@
  * https://opensource.org/licenses/MIT.
  */
 
-/* Minimalistic, statically linked Linux executable. */
+/* Minimalistic, statically linked Linux executable.
+ *
+ * The file carries only what is needed to load and run: the 64 B ELF header,
+ * the program headers, the real .rodata/.text, .data, and one block of
+ * page-gap padding (explained at the .data section below). There is no dynamic
+ * linker, no libc startup, no .eh_frame / .comment / .note.* (suppressed by
+ * the compiler flags in the Makefile and by the /DISCARD/ list at the end),
+ * and the section-header table is removed at strip time
+ * (objcopy --strip-section-headers), since the kernel does not need it to exec
+ * the file.
+ *
+ * Two-segment ROM/RAM model: ROM is a read/execute "flash" image, RAM is the
+ * read/write region, mirroring a real embedded target where .data must be
+ * copied from flash to RAM at startup. This split is the reason we cannot pack
+ * the file as tightly as a single-segment program could -- see the .data
+ * section comment for the page-gap / congruence reason.
+ */
 ENTRY(_start)
 
 /* Define fake memory regions for testing. */
@@ -16,6 +32,11 @@ MEMORY
 	RAM (wxa!r) : ORIGIN = 0x20000000, LENGTH = 0x10000000
 }
 
+/* Two loadable segments. "text" is the ROM image (.rodata + .text), "bss" is
+ * the RAM segment and also carries the .data initializer image (see below).
+ * A separate "data" segment is intentionally not used: folding .data into the
+ * RAM ("bss") segment is what lets the loader place initialized .data at its
+ * RAM VMA for us, with no runtime copy in _start (details at .data). */
 PHDRS
 {
 	text PT_LOAD;
@@ -79,11 +100,27 @@ SECTIONS
   } > ROM AT>ROM :text
   PROVIDE (_etext = .);
 
-  /* TODO: There is difference in behavior for ld and lld,
-   * causing .data section to not be properly loaded.
-   * marking .data as :bss makes it being loaded at proper
-   * VMA without need to copy from LMA(!?). This set combo
-   * provides consistent behavior for ld and lld. */
+  /* .data has its VMA in RAM but its load address (LMA) in ROM (>RAM AT>ROM):
+   * the initializer bytes are stored in the ROM image and the variables live
+   * in RAM at runtime. On a real target _start would copy LMA->VMA; here the
+   * Linux loader does it for us, which is why _start contains no copy loop.
+   *
+   * Assigning .data to the ":bss" (RAM) PHDR makes the kernel map the RAM
+   * segment file-backed: it reads .data's bytes from the file straight into
+   * the RAM VMA (0x20000000). That mapping only works because of a kernel
+   * rule: for every file-backed PT_LOAD, p_offset and p_vaddr must be
+   * congruent modulo the page size (the kernel mmaps page-aligned and trusts
+   * the low 12 bits to line up). The linker satisfies this by padding the
+   * file so .data's file offset (e.g. 0x6000) matches its VMA's low bits
+   * (0x...000). That padding is the ~1 KB page gap between .text and .data in
+   * the file -- the price of the ROM/RAM split.
+   *
+   * Do NOT add -Wl,--nmagic (or -z max-page-size=small) to squeeze out that
+   * gap: nmagic drops the padding, the file offset stops being page-congruent
+   * with the 0x20000000 VMA, the kernel maps .data to the wrong place, and the
+   * program SIGSEGVs at startup. Removing the gap would require collapsing to a
+   * single load segment (giving .data a VMA contiguous with .text), which
+   * abandons the ROM/RAM model this script exists to exercise. */
   .data : {
     *(.data .data.* .gnu.linkonce.d.* .data1)
     *(.sdata .sdata.* .sdata2.*)
@@ -92,7 +129,7 @@ SECTIONS
     LONG(0)
     . = ALIGN(16);
     PROVIDE(_data_end = .);
-  } >RAM AT>ROM :bss /* Should be :data? */
+  } >RAM AT>ROM :bss /* :bss (RAM PHDR), not :data -- see comment above */
   PROVIDE(_data_start = ADDR(.data));
   PROVIDE(_data_source = LOADADDR(.data));
 
