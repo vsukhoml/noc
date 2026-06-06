@@ -230,8 +230,8 @@ size_t strspn(const char *s, const char *characters);
 /// @param s pointer to the null-terminated byte string to be analyzed
 /// @param characters pointer to the null-terminated byte string that contains
 /// the characters to search for.
-/// @return a pointer to the character, or a null pointer if no character from characters
-/// occurs in s
+/// @return a pointer to the character, or a null pointer if no character from
+/// characters occurs in s
 char *strpbrk(const char *s, const char *characters);
 
 /// @brief Locates the last occurrence of character in the string
@@ -240,7 +240,8 @@ char *strpbrk(const char *s, const char *characters);
 /// considered to be part of the string.
 /// @param s pointer to the null-terminated byte string to be analyzed
 /// @param c character to search
-/// @return a pointer to the character, or a null pointer if c does not occur in the string.
+/// @return a pointer to the character, or a null pointer if c does not occur in
+/// the string.
 char *strrchr(const char *s, int c);
 
 /// @brief Locates the first occurrence of the null-terminated string s2 in the

@@ -15,8 +15,7 @@ int atoi(const char *nptr) {
     int result = 0;
     char c = 0;
 
-    while ((c = *nptr++) && isspace(c))
-        ;
+    while ((c = *nptr++) && isspace(c));
     if (c == '-') {
         c = *nptr++;
         minus = true;

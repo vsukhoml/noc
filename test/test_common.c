@@ -25,8 +25,7 @@ static bool test_string(uint32_t lineno, const char* cond, const char* got,
     size_t i;
 
     // Stop checking if we hit the length, or end of expect, or a mismatch.
-    for (i = 0; i < len && expect[i] && (got[i] == expect[i]); i++)
-        ;
+    for (i = 0; i < len && expect[i] && (got[i] == expect[i]); i++);
 
     // We failed if we stopped before len unless both strings terminated
     if ((i < len && (expect[i] || got[i])) != flags.invert) {
@@ -48,8 +47,7 @@ static bool test_memcmp(uint32_t lineno, const char* cond, const uint8_t* got,
     size_t i;
 
     // Stop checking if we hit the length, or a mismatch
-    for (i = 0; i < len && got[i] == expect[i]; i++)
-        ;
+    for (i = 0; i < len && got[i] == expect[i]; i++);
 
     // We failed if we stopped before len
     if ((i < len) != flags.invert) {
@@ -68,8 +66,7 @@ static bool test_memchk(uint32_t lineno, const char* cond, const uint8_t* got,
     size_t i;
 
     // Stop checking if we hit the length, or a mismatch
-    for (i = 0; i < len && got[i] == expect; i++)
-        ;
+    for (i = 0; i < len && got[i] == expect; i++);
 
     // We failed if we stopped before len.
     if ((i < len) != flags.invert) {

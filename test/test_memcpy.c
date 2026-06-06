@@ -111,7 +111,6 @@ static bool memcpy_aligned_test(void) {
 }
 DECLARE_TEST(memcpy_aligned_test);
 
-
 // Test various memory sizes, unaligned
 static bool memcpy_unaligned_test(void) {
     for (size_t sa = 0; sa < sizeof(uintptr_t); sa++)

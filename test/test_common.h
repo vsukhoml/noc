@@ -183,9 +183,9 @@ static inline uintptr_t noc_ptr_to_uint(const void* ptr) {
                     (struct test_flags){.str = 1})
 
 // Check if two memory buffers are equal, like memcmp().
-#define TEST_MEMCMP(got, expect, len)                                     \
-    add_test_result(__LINE__, #got " == " #expect, noc_ptr_to_uint(got),  \
-                    noc_ptr_to_uint(expect), len,                         \
+#define TEST_MEMCMP(got, expect, len)                                    \
+    add_test_result(__LINE__, #got " == " #expect, noc_ptr_to_uint(got), \
+                    noc_ptr_to_uint(expect), len,                        \
                     (struct test_flags){.memcmp = 1})
 
 // Check if memory buffer is set to value, like memchk().
