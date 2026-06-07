@@ -54,10 +54,38 @@ static inline char char_digit(unsigned char c, char a) {
     return (char)(c > 9 ? (c + a - 10) : (c + '0'));
 }
 
+// va_arg is expensive on some ABIs (notably x86-64 SysV, where each use inlines
+// a gp_offset/overflow-area branch). Pull the repeated 32-bit and pointer
+// fetches through out-of-line helpers so the sequence is emitted once instead
+// of at every call site. Taking va_list by pointer keeps this portable across
+// ABIs where va_list is an array (x86-64) or a struct (AArch64).
+// Force the va_arg sequence out-of-line where va_arg is expensive (x86-64,
+// AArch64 keep a register save area and branch on gp/fp offsets). On RISC-V the
+// va_arg is just a load + pointer bump, so out-lining would only add call
+// overhead -- keep it inlinable there.
+#if defined(ARCH_RISCV32)
+#define VA_HELPER static inline
+#else
+#define VA_HELPER static __attribute__((noinline))
+#endif
+VA_HELPER uint32_t va_u32(va_list *ap) { return va_arg(*ap, uint32_t); }
+VA_HELPER void *va_pointer(va_list *ap) { return va_arg(*ap, void *); }
+
+#ifdef NOC_PRINTF_FLOAT
+// Float support (%f/%e/%g) is opt-in via the NOC_PRINTF_FLOAT make flag. It
+// must read doubles with va_arg(*ap, double), which needs the FP vararg
+// register-save area -- so the Makefile drops -mgeneral-regs-only from this
+// object whenever NOC_PRINTF_FLOAT is set. Add va_double() and the f/e/g cases
+// in formatter() under this guard; do NOT enable them without the flag, or the
+// general-regs-only build will fail to compile va_arg(double).
+#endif
+
 typedef bool (*write_char)(void *state, int c);
 
+// Takes va_list by pointer (not by value) so the helpers above can advance it
+// and so forwarding works uniformly on array- and struct-typed va_list ABIs.
 static int formatter(write_char write, void *state, const char *format,
-                     va_list args) {
+                     va_list *ap) {
     char digits[68];  // Buffer for text representation.
 
     // Flags for format specifier
@@ -125,7 +153,7 @@ static int formatter(write_char write, void *state, const char *format,
         // Process padding width
         pad_width = 0;
         if (c == '*') {
-            int p = va_arg(args, int);
+            int p = (int)va_u32(ap);
             pad_width = (p < 0) ? 0 : (uint32_t)p;
             c = *format++;
         } else {
@@ -140,7 +168,7 @@ static int formatter(write_char write, void *state, const char *format,
         if (c == '.') {
             c = *format++;
             if (c == '*') {
-                int p = va_arg(args, int);
+                int p = (int)va_u32(ap);
                 precision = (p < 0) ? 0 : (uint32_t)p;
                 c = *format++;
             } else {
@@ -159,11 +187,11 @@ static int formatter(write_char write, void *state, const char *format,
         char *value_str = NULL;  // text representation of argument
 
         if (c == 's') {
-            value_str = va_arg(args, char *);
+            value_str = va_pointer(ap);
             if (value_str == NULL) value_str = (char *)"[null]";
         } else if (c == 'H') {
             // Extension: hex dump output (e.g. %32H will print 32 bytes)
-            value_str = va_arg(args, char *);
+            value_str = va_pointer(ap);
 
             if (!value_str || !precision) {
                 // Hex dump requires precision
@@ -215,16 +243,16 @@ static int formatter(write_char write, void *state, const char *format,
             }
 
             if (c == 'c') {  // '%c', read char
-                c = va_arg(args, int);
+                c = (char)va_u32(ap);
                 if (!write(state, c)) return EOF;
                 count++;
                 continue;
             }
 
             if (flags.bit64) {
-                v = va_arg(args, uint64_t);
+                v = va_arg(*ap, uint64_t);
             } else {
-                v = va_arg(args, uint32_t);
+                v = va_u32(ap);
                 if (flags.bit16) v = v & 0xffff;
                 if (flags.bit8) v = v & 0xff;
             }
@@ -380,7 +408,7 @@ int printf(const char *format, ...) {
     ctx.len = 0;
 
     va_start(args, format);
-    res = formatter(write_printf, &ctx, format, args);
+    res = formatter(write_printf, &ctx, format, &args);
     va_end(args);
     if (res > 0) {
         if (ctx.len) res = (int)putnstr(ctx.buf, ctx.len);
@@ -428,7 +456,7 @@ int snprintf(char *restrict str, size_t n, const char *restrict format, ...) {
     struct snprintf_state ctx = {.str_end = str + n - 1, .str = str};
     va_list args;
     va_start(args, format);
-    int res = formatter(write_str, &ctx, format, args);
+    int res = formatter(write_str, &ctx, format, &args);
     va_end(args);
     *ctx.str_end = 0;
     *ctx.str = 0;
@@ -439,7 +467,12 @@ int vsnprintf(char *restrict str, size_t n, const char *restrict format,
               va_list args) {
     if (n == 0) return -1;
     struct snprintf_state ctx = {.str_end = str + n - 1, .str = str};
-    int res = formatter(write_str, &ctx, format, args);
+    // args is a parameter (already pointer-decayed on array ABIs), so copy it
+    // into a local object whose address has the va_list* type formatter wants.
+    va_list ap;
+    va_copy(ap, args);
+    int res = formatter(write_str, &ctx, format, &ap);
+    va_end(ap);
     *ctx.str_end = 0;
     *ctx.str = 0;
     return res;

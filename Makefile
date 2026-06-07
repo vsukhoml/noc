@@ -294,6 +294,21 @@ $(PLATFORM_OBJECTS): CFLAGS+=$(PLATFORM_FLAGS)
 # Allow bad formats for testing
 $(ODIR)/test/test_snprintf.o: CFLAGS+=-Wno-error=format -Wno-error=format-extra-args
 
+# printf float support is opt-in: NOC_PRINTF_FLOAT=1 enables %f/%e/%g.
+# When OFF (default) printf.c has no floating point, so the variadic-prologue
+# vector register-save area (x86-64: 8x vmovaps guarded by `test %al`; AArch64:
+# q0-q7 stores) is dead weight -- build with general regs only to drop it from
+# printf()/snprintf(). riscv32 (rv32imc, no F extension) has no such area.
+# When ON, -mgeneral-regs-only must NOT be used: va_arg(double) reads from that
+# very save area, and the flag would make it a compile error.
+ifdef NOC_PRINTF_FLOAT
+CFLAGS+=-DNOC_PRINTF_FLOAT=1
+else
+ifneq ($(filter $(ARCH),x86_64 aarch64),)
+$(ODIR)/src/printf.o: CFLAGS+=-mgeneral-regs-only
+endif
+endif
+
 # Return current date or use provided
 TIMESTAMP?="$(shell date +%s)"
 
