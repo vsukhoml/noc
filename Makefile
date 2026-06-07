@@ -74,6 +74,25 @@ CFLAGS+=-DUSE_PLATFORM_64BIT_DIV=1
 
 PLATFORM_SOURCES?=./platform/$(TARGET).c
 LD_SCRIPT?=./platform/$(TARGET).ld
+
+# Memory-layout selector for the Linux test binary (same toolchain/sources):
+#   split  (default) Two PT_LOADs modelling an embedded ROM/RAM split. _start
+#                    relies on the kernel to load .data in place at its RAM VMA.
+#                    Highest fidelity to a real target (separate rx/rw regions,
+#                    LMA!=VMA .data relocation), at the cost of a ~1.2 KB
+#                    inter-segment page gap in the file.
+#   single           One RWX PT_LOAD, .data contiguous after .text. ~1.2 KB
+#                    smaller test ELF, but drops the ROM/RAM separation.
+# Both layouts keep a PT_TLS for __thread data (currently just errno); how a
+# fuller TLS/pthreads setup (thread-pointer init) should differ between them is
+# still open -- branch on NOC_SINGLE_SEGMENT in the platform code when needed.
+LINUX_LAYOUT?=split
+ifeq ($(LINUX_LAYOUT),single)
+LD_SCRIPT:=./platform/x86_64-pc-linux-gnu-single.ld
+CFLAGS_LD+=-Wl,--no-warn-rwx-segments
+CFLAGS+=-DNOC_SINGLE_SEGMENT=1
+endif
+
 CFLAGS_CLANG_LD+=-fuse-ld=lld
 CFLAGS_LD+=-fno-pic -fno-plt -fno-pie
 CFLAGS_LD+=-static -nostdlib -L$(ODIR) -l$(NOC_NAME)

@@ -35,6 +35,8 @@ Following variables are used:
 * `OBJDUMP_FLAGS` specific flags to `OBJDUMP`
 * `PLATFORM_SOURCES` list of platform specific sources to build for tests
 * `LD_SCRIPT` specifies platform specific linker script for tests
+* `LINUX_LAYOUT` x86_64 test-binary memory layout: `split` (default, two-segment
+  ROM/RAM model) or `single` (one RWX segment, ~1.2 KB smaller ELF)
 
 Currently only limited targets are configured as example: ```make ARCH=riscv32```, ```make ARCH=aarch64```
 You can provide additional rules in `Makefile.toolchain` or call `make` with abovementioned variables configured for your target.
