@@ -38,6 +38,45 @@ size_t strlen(const char *s) {
 }
 #endif
 
+char *strcpy(char *restrict dest, const char *restrict src) {
+    char *d = dest;
+    while ((*d = *src) != 0) {
+        d++;
+        src++;
+    }
+    return dest;
+}
+
+char *strncpy(char *restrict dest, const char *restrict src, size_t len) {
+    char *d = dest;
+    while ((len != 0) && (*src != 0)) {
+        *(d++) = *(src++);
+        len--;
+    }
+    // C11: pad with zeros up to len; truncated copy is NOT terminated.
+    while (len != 0) {
+        *(d++) = 0;
+        len--;
+    }
+    return dest;
+}
+
+char *strcat(char *restrict s1, const char *restrict s2) {
+    (void)strcpy(&s1[strlen(s1)], s2);
+    return s1;
+}
+
+char *strncat(char *restrict s1, const char *restrict s2, size_t len) {
+    char *d = &s1[strlen(s1)];
+    while ((len != 0) && (*s2 != 0)) {
+        *(d++) = *(s2++);
+        len--;
+    }
+    // Unlike strncpy, the result is always terminated.
+    *d = 0;
+    return s1;
+}
+
 char *strzcpy(char *dest, const char *src, size_t len) {
     char *d = dest;
     if (!len) return dest;
@@ -77,15 +116,29 @@ const void *memchr(const void *buffer, int c, size_t n) {
 const char *strchr(const char *s, int c) {
     if (!s) return s;
     while (*s) {
-        if (*s == c) return s;
+        if (*s == (char)c) return s;
         s++;
     }
-    return NULL;
+    // The terminating null character is considered part of the string.
+    return ((char)c == 0) ? s : NULL;
+}
+
+char *strrchr(const char *s, int c) {
+    const char *last = NULL;
+    if (!s) return NULL;
+    do {
+        if (*s == (char)c) last = s;
+    } while (*(s++) != 0);
+    return (char *)last;
 }
 
 size_t strnlen(const char *str, size_t maxlen) {
     const char *p = memchr(str, 0, maxlen);
     return (p) ? (size_t)(p - str) : maxlen;
+}
+
+size_t strnlen_s(const char *s, size_t maxlen) {
+    return (s == NULL) ? 0 : strnlen(s, maxlen);
 }
 
 const void *memrchr(const void *buffer, int c, size_t n) {
@@ -160,6 +213,19 @@ char *strpbrk(const char *s, const char *accept) {
         s++;
     }
     return NULL;
+}
+
+// Count leading characters that are all from the list.
+size_t strspn(const char *s, const char *characters) {
+    if (!s || !characters) return 0;
+    const char *start = s;
+    while (*s) {
+        const char *a = characters;
+        while (*a && (*a != *s)) a++;
+        if (!*a) break;
+        s++;
+    }
+    return (size_t)(s - start);
 }
 
 // Search for first character from the list.

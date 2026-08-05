@@ -140,20 +140,6 @@ int strcmp(const char *s1, const char *s2);
 /// string pointed by `s2`
 int strncmp(const char *s1, const char *s2, size_t len);
 
-/// @brief Compare strings using locale.
-///
-/// The strcoll function compares the string pointed to by s1 to the string
-/// pointed to by s2, both interpreted as appropriate to the LC_COLLATE category
-/// of the current locale.
-/// @param s1 pointer to first string.
-/// @param s2 pointer to second string
-/// @return The strcoll function returns an integer greater than, equal to, or
-/// less than zero, accordingly as the string pointed to by s1 is greater than,
-/// equal to, or less than the string pointed to by s2 when both are interpreted
-/// as appropriate to the current locale.
-int strcoll(const char *s1, const char *s2);
-
-size_t strxfrm(char *restrict s1, const char *restrict s2, size_t n);
 /// @}
 
 /// @defgroup g3 Search functions.

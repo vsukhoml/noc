@@ -89,7 +89,6 @@ void *realloc(void *ptr, size_t size);
 int atoi(const char *nptr);
 long int atol(const char *nptr);
 long long int atoll(const char *nptr);
-long double strtold(const char *restrict nptr, char **restrict endptr);
 long int strtol(const char *restrict nptr, char **restrict endptr, int base);
 long long int strtoll(const char *restrict nptr, char **restrict endptr,
                       int base);
@@ -152,18 +151,9 @@ lldiv_t lldiv(long long int numer, long long int denom);
 
 /// @}
 
-/// @defgroup a6 Multibyte/wide character conversion functions
-/// @{
-
-int mblen(const char *s, size_t n);
-
-int mbtowc(wchar_t *restrict pwc, const char *restrict s, size_t n);
-
-/// @}
-
 void abort(void) __attribute__((noreturn));
 
-void *bsearch(const void *key, void *base, size_t nmemb, size_t size,
+void *bsearch(const void *key, const void *base, size_t nmemb, size_t size,
               int (*compar)(const void *, const void *));
 void qsort(void *base, size_t nmemb, size_t size,
            int (*compar)(const void *, const void *));

@@ -72,6 +72,90 @@ static bool test_strncmp(void) {
 }
 DECLARE_TEST(test_strncmp);
 
+static bool test_strcpy(void) {
+    char buf[16];
+    memset(buf, 0x55, sizeof(buf));
+    TEST_PTR_EQ(strcpy(buf, "hello"), buf);
+    TEST_STR_EQ(buf, "hello");
+    TEST_EQ(buf[6], 0x55);  // bytes past the terminator untouched
+    TEST_PTR_EQ(strcpy(buf, ""), buf);
+    TEST_EQ(buf[0], 0);
+    return is_test_succeed();
+}
+DECLARE_TEST(test_strcpy);
+
+static bool test_strncpy(void) {
+    char buf[8];
+    memset(buf, 0x55, sizeof(buf));
+    TEST_PTR_EQ(strncpy(buf, "ab", sizeof(buf)), buf);
+    TEST_STR_EQ(buf, "ab");
+    TEST_MEMCHK(&buf[2], 0, 6);  // zero-padded to len
+
+    memset(buf, 0x55, sizeof(buf));
+    TEST_PTR_EQ(strncpy(buf, "abcdefgh", 4), buf);  // truncation: no NUL
+    TEST_MEMCMP(buf, "abcd", 4);
+    TEST_EQ(buf[4], 0x55);
+    return is_test_succeed();
+}
+DECLARE_TEST(test_strncpy);
+
+static bool test_strcat(void) {
+    char buf[16] = "abc";
+    TEST_PTR_EQ(strcat(buf, "def"), buf);
+    TEST_STR_EQ(buf, "abcdef");
+    TEST_PTR_EQ(strcat(buf, ""), buf);
+    TEST_STR_EQ(buf, "abcdef");
+    return is_test_succeed();
+}
+DECLARE_TEST(test_strcat);
+
+static bool test_strncat(void) {
+    char buf[16] = "ab";
+    TEST_PTR_EQ(strncat(buf, "cdef", 2), buf);
+    TEST_STR_EQ(buf, "abcd");  // truncated but always terminated
+    TEST_PTR_EQ(strncat(buf, "ef", 8), buf);
+    TEST_STR_EQ(buf, "abcdef");
+    TEST_PTR_EQ(strncat(buf, "xyz", 0), buf);
+    TEST_STR_EQ(buf, "abcdef");
+    return is_test_succeed();
+}
+DECLARE_TEST(test_strncat);
+
+static bool test_strchr_family(void) {
+    const char *s = "abcabc";
+    TEST_PTR_EQ(strchr(s, 'a'), s);
+    TEST_PTR_EQ(strchr(s, 'b'), s + 1);
+    TEST_PTR_EQ(strchr(s, 'x'), NULL);
+    TEST_PTR_EQ(strchr(s, 0), s + 6);  // terminator is part of the string
+    TEST_PTR_EQ(strrchr(s, 'b'), s + 4);
+    TEST_PTR_EQ(strrchr(s, 'a'), s + 3);
+    TEST_PTR_EQ(strrchr(s, 'x'), NULL);
+    TEST_PTR_EQ(strrchr(s, 0), s + 6);
+    TEST_PTR_EQ(strrchr(NULL, 'a'), NULL);
+    return is_test_succeed();
+}
+DECLARE_TEST(test_strchr_family);
+
+static bool test_strspn(void) {
+    TEST_EQ(strspn("aabbcc", "ab"), 4);
+    TEST_EQ(strspn("aabbcc", "abc"), 6);
+    TEST_EQ(strspn("xyz", "ab"), 0);
+    TEST_EQ(strspn("", "ab"), 0);
+    TEST_EQ(strspn("abc", ""), 0);
+    TEST_EQ(strspn(NULL, "ab"), 0);
+    return is_test_succeed();
+}
+DECLARE_TEST(test_strspn);
+
+static bool test_strnlen_s(void) {
+    TEST_EQ(strnlen_s(NULL, 5), 0);
+    TEST_EQ(strnlen_s("abc", 5), 3);
+    TEST_EQ(strnlen_s("abcdef", 4), 4);
+    TEST_EQ(strnlen_s("", 4), 0);
+    return is_test_succeed();
+}
+DECLARE_TEST(test_strnlen_s);
+
 static bool test_memcmp(void) {
     TEST_EQ(memcmp(NULL, NULL, 0), 0);
     TEST_EQ(memcmp(NULL, NULL, 1), 0);
