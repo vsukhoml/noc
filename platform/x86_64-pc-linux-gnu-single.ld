@@ -115,6 +115,11 @@ SECTIONS
 
   .bss (NOLOAD) : {
     _bss_start = .;
+    /* Runtime TLS area; see the comment in x86_64-pc-linux-gnu.ld. */
+    . = ALIGN(8);
+    . = . + SIZEOF(.tdata) + SIZEOF(.tbss);
+    PROVIDE(__tls_tp = .);
+    . = . + 8;
     *(.dynbss)
     *(.bss .bss.* .gnu.linkonce.b.*)
     *(.dynlbss)

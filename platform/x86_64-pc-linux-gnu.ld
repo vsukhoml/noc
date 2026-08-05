@@ -151,6 +151,19 @@ SECTIONS
 
   .bss (NOLOAD) : {
     _bss_start = .;
+    /* Runtime TLS area for the single-thread setup in __start (x86-64 TLS
+     * variant II): the thread's copy of .tdata/.tbss sits in the block just
+     * below __tls_tp, and __tls_tp itself is the thread pointer -- %fs:0
+     * stores its own address (TCB self-pointer). Local-exec offsets resolve
+     * to tp - align_up(PT_TLS memsz, p_align) + sym offset, which lands in
+     * the block while p_align <= 8 (both TLS sections are ALIGN(8)-padded,
+     * so memsz is a multiple of 8). Zero-init TLS only: .tdata template
+     * bytes are not mapped at runtime, so keep initialized __thread data
+     * out (or add .tdata to a PT_LOAD and copy it in __start). */
+    . = ALIGN(8);
+    . = . + SIZEOF(.tdata) + SIZEOF(.tbss);
+    PROVIDE(__tls_tp = .);
+    . = . + 8;
     *(.dynbss)
     *(.bss .bss.* .gnu.linkonce.b.*)
     *(.dynlbss)

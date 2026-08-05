@@ -4,6 +4,7 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
+#include <asm/prctl.h>
 #include <linux/time.h>
 #include <linux/time_types.h>
 #include <sched.h>
@@ -133,6 +134,10 @@ extern char _data_end[];
 extern char _bss_start[];
 extern char _bss_end[];
 
+// Thread pointer for the single static thread; the linker script reserves
+// the TLS block just below it and the %fs:0 self-pointer slot at it.
+extern char __tls_tp[];
+
 int main(int argc, char **argv, char **envp);
 
 static void __attribute__((used)) __start(int argc, char **argv, char **envp) {
@@ -146,6 +151,13 @@ static void __attribute__((used)) __start(int argc, char **argv, char **envp) {
 
     // .bss is NOLOAD (no file bytes), so zero it ourselves.
     memset(_bss_start, 0, (uintptr_t)(_bss_end - _bss_start));
+
+    // x86-64 TLS variant II: FS base is the thread pointer, TLS data sits at
+    // negative offsets just below it, and %fs:0 holds the thread pointer
+    // itself. Without this every __thread access (errno!) faults. See the
+    // __tls_tp comment in the linker script for layout and constraints.
+    *(uintptr_t *)(void *)__tls_tp = (uintptr_t)__tls_tp;
+    __syscall2(SYS_arch_prctl, ARCH_SET_FS, (uintptr_t)__tls_tp);
 
     // For benchmarks make sure we only run on same core
     static const cpu_set_t set = {.__bits = {2}};
