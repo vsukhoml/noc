@@ -13,6 +13,29 @@
 #include "noc_internal/common.h"
 #include "test_common.h"
 
+// Override the weak trapping __chk_fail() so the divide-by-zero path is
+// testable: count invocations instead of trapping.
+void __chk_fail(void);
+static uint32_t chk_fail_count;
+void __chk_fail(void) { chk_fail_count++; }
+
+static bool test_softdiv_zero(void) {
+    uint64_t n = 0x1122334455667788ULL;
+    chk_fail_count = 0;
+    // Hook fires; on return quotient saturates all-ones, remainder is the
+    // truncated dividend (RISC-V hardware semantics).
+    TEST_EQ(_umoddiv32_soft(&n, 0), 0x55667788UL);
+    TEST_EQ(n, UINT64_MAX);
+    TEST_EQ(chk_fail_count, 1);
+
+    uint64_t r = 0;
+    TEST_EQ(_udivmod64_soft(0x99AABBCCDDEEFF00ULL, 0, &r), UINT64_MAX);
+    TEST_EQ(r, 0xDDEEFF00UL);
+    TEST_EQ(chk_fail_count, 2);
+    return is_test_succeed();
+}
+DECLARE_TEST(test_softdiv_zero);
+
 static void check32(uint64_t n, uint32_t d) {
     uint64_t q = n;
     const uint32_t r = _umoddiv32_soft(&q, d);

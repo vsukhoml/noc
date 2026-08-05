@@ -15,6 +15,9 @@
 
 #include "noc_internal/common.h"
 
+// Bounds/constraint failure hook; weak default traps (defined in memcpy.c).
+void __chk_fail(void);
+
 // Divide (n_hi32:n_lo32) by d, with the top bit of d set and n_hi32 < d so
 // the quotient fits 32 bits. Returns ((uint64_t)q << 32) | r: packing
 // quotient and remainder into one value hands both back in a register pair
@@ -78,8 +81,18 @@ uint32_t _umoddiv32_soft(uint64_t *n, uint32_t d) {
     n_hi32 = (uint32_t)(*n >> 32);
     n_lo32 = (uint32_t)*n;
 
-    // Use 32-bit hardware division if available. Also fault on div by zero.
+    // Use 32-bit hardware division if available.
     if (d == 0 || n_hi32 == 0) {
+        if (__builtin_expect(d == 0, 0)) {
+            // Divide by zero: report through the constraint-failure hook,
+            // which traps by default -- unlike hardware, where x86 faults
+            // but RISC-V silently returns all-ones. If a platform override
+            // returns, mirror RISC-V semantics: quotient all-ones,
+            // remainder the (truncated) dividend.
+            __chk_fail();
+            *n = UINT64_MAX;
+            return n_lo32;
+        }
         *n = n_lo32 / d;
         return n_lo32 % d;
     }
@@ -127,6 +140,7 @@ uint64_t _udivmod64_soft(uint64_t n, uint64_t d, uint64_t *rem) {
     const uint32_t d_hi = (uint32_t)(d >> 32);
 
     if (d_hi == 0) {
+        // d == 0 is caught here too: _umoddiv32_soft calls __chk_fail().
         uint64_t q = n;
         *rem = _umoddiv32_soft(&q, (uint32_t)d);
         return q;
